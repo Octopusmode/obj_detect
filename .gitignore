@@ -6,3 +6,4 @@ video*
 /train_data_test
 /train_data
 /*.zip
+/old

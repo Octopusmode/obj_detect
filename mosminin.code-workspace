@@ -1,9 +1,0 @@
-{
-	"folders": [
-		{
-			"uri": "vscode-remote://wsl+ubuntu_focal/home/mosminin"
-		}
-	],
-	"remoteAuthority": "wsl+ubuntu_focal",
-	"settings": {}
-}
