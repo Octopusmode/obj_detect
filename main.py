@@ -19,17 +19,19 @@ model.setInputParams(size=(416,416), scale=1/255)
 
 # Load class lists
 classes = []
-with open(r'D:\src\obj_detect\dnn_model\classes.txt', 'r') as file_object:
+with open(r'classes.txt', 'r') as file_object:
     for class_name in file_object.readlines():
         class_name = class_name.strip()
         classes.append(class_name)
 
-IMG_WIDTH = 1920
-IMG_HEIGHT = 1080
+IMG_WIDTH = 1024
+IMG_HEIGHT = 768
 
 # Initialize camer/stream
-# cap = cv2.VideoCapture('video_park.mp4')
-cap = cv2.VideoCapture('rtsp://vidanalitic:q23NYz9SXQ@192.168.103.48:554/RVi/1/1')
+cap = cv2.VideoCapture('video_park.mp4')
+# cap = cv2.VideoCapture('rtsp://vidanalitic:q23NYz9SXQ@192.168.103.48:554/RVi/1/1')
+# cap = cv2.VideoCapture('rtsp://admin:Admin_admin0@192.168.150.32/cam/realmonitor?channel=1&subtype=0')
+
 # cap = cv2.VideoCapture('rtsp://vidanalitic:q23NYz9SXQ@192.168.103.48:554/RVi/1/1')
 # rtsp://vidanalitic:q23NYz9SXQ@192.168.103.48:554/PSIA/streaming/channels/101
 # cap = cv2.VideoCapture(r'video_park.mp4')
@@ -40,6 +42,10 @@ count = 1000
 
 def contains(x1, y1, x2, y2, ox1=120, oy1=70, ox2=1580, oy2=880):
    return x1 < ox1 < ox2 < x2 and y1 < oy1 < oy2 < y2
+
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+out = cv2.VideoWriter('output.avi',fourcc, 20.0, (1024,768))
 
 while True:
     ret, frame = cap.read()
@@ -52,6 +58,12 @@ while True:
     #     cv2.imshow('filter', frame_net)
     #     first = True
     
+    if ret==True:
+        grab = cv2.flip(frame,0)
+
+        # write the flipped frame
+        out.write(grab)
+    
     fc+=1
     TIME = time.time() - start_time
     if (TIME) >= display_time :
@@ -62,7 +74,7 @@ while True:
     fps_disp = "FPS: "+str(round(FPS))[:5]
     
     # Object detection
-    # (class_ids, scores, bboxes) = model.detect(frame_net)
+    # print(model.detect(frame_net))
     
     i = 0
     
@@ -84,7 +96,7 @@ while True:
     #             #     count += 1 
                     
     
-    cv2.putText(frame, fps_disp, (7, 70), cv2.FONT_HERSHEY_DUPLEX, 1, (100, 255, 0), 3, cv2.LINE_AA)
+    # cv2.putText(frame, fps_disp, (7, 70), cv2.FONT_HERSHEY_DUPLEX, 1, (100, 255, 0), 3, cv2.LINE_AA)
     
     # print('class_ids', class_ids)
     # print('score', scores)
@@ -97,3 +109,5 @@ while True:
     cv2.imshow('Output', resized)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    cap.release()
+    out.release()
