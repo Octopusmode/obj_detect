@@ -3,6 +3,7 @@ import time
 import sys
 import numpy as np
 
+
 def build_model(is_cuda):
     net = cv2.dnn.readNet("dnn_model\\yolov5n.onnx")
     if is_cuda:

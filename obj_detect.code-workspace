@@ -2,12 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "../cv_videos"
-		},
-		{
-			"path": "../yolo5"
 		}
 	]
 }

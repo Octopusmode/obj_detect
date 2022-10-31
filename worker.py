@@ -4,7 +4,16 @@ import cv2
 import numpy as np
 import sys
 from time import sleep
-from json import dump, load
+from configuration import init
+from pathlib import Path
+
+data = init()['default']
+print(data)
+
+model_path = data['model_path']
+data_path = data['data_path']
+
+print(model_path, data_path)
 
 # Geometry
 from EasyROI import EasyROI
@@ -70,6 +79,8 @@ def render(metadata, frame):
         cv2.putText(shapes, str(score), (x, y + 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 200), 2)
         cv2.line(shapes, (x, y + h), (x + w, y + h), (200, 0, 0), 10)
     return shapes
+
+def draw
     
 
 winname = "Output"
@@ -77,12 +88,18 @@ cv2.namedWindow(winname)        # Create a named window
 cv2.moveWindow(winname, 40,30)  # Move it to (40,30)
 
 
+
 def main():
+    cycles = 0
     while True:
+        cycles += 1
         ret, frame = cap.read()
         
         if frame is None:
             break
+        
+        if cycles > 50 and cv2.getWindowProperty('Output',cv2.WND_PROP_VISIBLE) < 1:
+            break # TODO проверять открыто ли окно и взводить влаг вместо cycles
         
         result = inference(frame, 0.5, ['0'])
         alpha = 0.05
