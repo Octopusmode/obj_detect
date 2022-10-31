@@ -1,4 +1,4 @@
-RESO = 320, 320
+# TODO Контролировать направление камеры
 
 import cv2
 import numpy as np
@@ -7,13 +7,13 @@ from time import sleep
 from configuration import init
 from pathlib import Path
 
+RED = (0,0,255)
+GREEN = (0,255,0)
+
 data = init()['default']
-print(data)
 
 model_path = data['model_path']
 data_path = data['data_path']
-
-print(model_path, data_path)
 
 # Geometry
 from EasyROI import EasyROI
@@ -32,7 +32,7 @@ else:
     net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
     net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 model = cv2.dnn_DetectionModel(net)
-model.setInputParams(size=RESO, scale=1/255)
+model.setInputParams(size=data['frame_size'], scale=1/255)
 
 # Load class lists
 classes = []
@@ -71,17 +71,20 @@ def inference(frame, confidence, filter):
     return result
 
 def render(metadata, frame):
-    shapes = np.zeros_like(frame, np.uint8)
     for item in metadata:
         bbox, class_id, score = item
         (x, y, w, h) = bbox
-        cv2.putText(shapes, str(classes[class_id]), (x, y - 10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (200, 0, 50), 2)
-        cv2.putText(shapes, str(score), (x, y + 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 200), 2)
-        cv2.line(shapes, (x, y + h), (x + w, y + h), (200, 0, 0), 10)
-    return shapes
+        cv2.putText(frame, str(classes[class_id]), (x, y - 10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (200, 0, 50), 2)
+        cv2.putText(frame, str(score), (x, y + 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 200), 2)
+        cv2.line(frame, (x, y + h), (x + w, y + h), (200, 0, 0), 10)
+    return frame
 
-def draw
-    
+def draw_polygons(data, frame, color=(255,255,255)):
+    shapes = np.zeros_like(frame, np.uint8)
+    for index, polygon in enumerate(data):
+        verticles = np.array(data[index])
+        cv2.fillPoly(shapes, pts=[verticles], color=color)
+    return shapes
 
 winname = "Output"
 cv2.namedWindow(winname)        # Create a named window
@@ -102,12 +105,12 @@ def main():
             break # TODO проверять открыто ли окно и взводить влаг вместо cycles
         
         result = inference(frame, 0.5, ['0'])
-        alpha = 0.05
+        alpha = 0.7
+        frame = render(result, frame)
         output = frame.copy()
-        shapes = render(result, frame)
+        shapes = draw_polygons(data['polygons'], frame, GREEN)
         mask = shapes.astype(bool)
         output[mask] = cv2.addWeighted(frame, alpha, shapes, 1 - alpha, 0)[mask]
-
         cv2.imshow(winname, output)
         cv2.waitKey(1)
 
