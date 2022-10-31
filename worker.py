@@ -7,6 +7,8 @@ from time import sleep
 from configuration import init
 from pathlib import Path
 
+from shapely.geometry import Polygon, LineString
+
 RED = (0,0,255)
 GREEN = (0,255,0)
 
@@ -47,8 +49,18 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
 
-def ssd_out():
-    pass
+def ssd_out(results, zones):
+    instanses = []
+    for item in results:
+        bbox, class_id, score = item
+        (x, y, w, h) = bbox
+        for index, polygons in enumerate(zones):
+            verticles = np.array(zones[index])
+            shapely_poly = Polygon(verticles)
+            shapely_line = LineString([(x, y+h), (x+w, y+h)])
+            instanses.append(bool(shapely_poly.intersects(shapely_line)))
+        return any(instanses)
+
 
 def inference(frame, confidence, filter):
     # Object detection
@@ -111,6 +123,8 @@ def main():
         shapes = draw_polygons(data['polygons'], frame, GREEN)
         mask = shapes.astype(bool)
         output[mask] = cv2.addWeighted(frame, alpha, shapes, 1 - alpha, 0)[mask]
+        if ssd_out(result, data['polygons']):
+            cv2.putText(output, 'WARNING', (100, 175), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 200), 2)     
         cv2.imshow(winname, output)
         cv2.waitKey(1)
 

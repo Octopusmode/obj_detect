@@ -5,7 +5,7 @@ import json, os
 def init(file_path='config.json', pattern_id=0):
     default_data = {"default":
                         {"polygons": (((0,0), (1040,0), (1030, 520), (445, 1080), (0, 1080)),
-                                      ((100, 100), (1300, 100), (800, 600))),
+                                      ((1600, 100), (1900, 100), (1900, 900), (1600, 900))),
                          "model_path": 'dnn_model/',
                          "data_path": 'resources/',
                          "frame_size": (320, 320),
