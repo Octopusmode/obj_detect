@@ -117,14 +117,20 @@ def main():
             break # TODO проверять открыто ли окно и взводить влаг вместо cycles
         
         result = inference(frame, 0.5, ['0'])
+        
+        if ssd_out(result, data['polygons']):
+            cv2.putText(output, 'WARNING', (100, 175), cv2.FONT_HERSHEY_COMPLEX_SMALL, 5, (255, 255, 255), 2)
+            zone_color = RED
+        else:
+            zone_color = GREEN
+        
         alpha = 0.7
         frame = render(result, frame)
         output = frame.copy()
-        shapes = draw_polygons(data['polygons'], frame, GREEN)
+        shapes = draw_polygons(data['polygons'], frame, zone_color)
         mask = shapes.astype(bool)
         output[mask] = cv2.addWeighted(frame, alpha, shapes, 1 - alpha, 0)[mask]
-        if ssd_out(result, data['polygons']):
-            cv2.putText(output, 'WARNING', (100, 175), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 200), 2)     
+        
         cv2.imshow(winname, output)
         cv2.waitKey(1)
 
