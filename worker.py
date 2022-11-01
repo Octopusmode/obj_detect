@@ -44,10 +44,16 @@ with open(r'dnn_model\classes.txt', 'r') as file_object:
         classes.append(class_name)
 
 # Initialize input stream
-cap = cv2.VideoCapture('worker.mp4')
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+cap = cv2.VideoCapture('worker_hd.mp4')
+f_width  = cap.get(cv2.CAP_PROP_FRAME_WIDTH)   # float `width`
+f_height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)  # float `height`
 
+for items in data['polygons']:
+    for item in items:
+        item[0] = int(item[0] * f_width)
+        item[1] = int(item[1] * f_height)
+
+print(data['polygons'])
 
 def ssd_out(results, zones):
     instanses = []
@@ -62,24 +68,26 @@ def ssd_out(results, zones):
         return any(instanses)
 
 
-def inference(frame, confidence, filter):
+def inference(frame, confidence, offset, filter):
     # Object detection
     result = []
+    
+    bbs = []
+    confs = []
+    cls = []
+    
     (class_ids, scores, bboxes) = model.detect(frame)
     for class_id, score, bbox in zip(class_ids, scores, bboxes):    
         if score > confidence and str(class_id) in filter: # TODO Сделать по фильтру
-            result.append((bbox, class_id, score))
+            # result.append((bbox, class_id, score))
             
-    # indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.25, 0.45)  # TODO Добавить для устранения оверлапов
-    # result_class_ids = []
-    # result_confidences = []
-    # result_boxes = []
-
-    # for i in indexes:
-    #     result_confidences.append(confidences[i])
-    #     result_class_ids.append(class_ids[i])
-    #     result_boxes.append(boxes[i])    
-             
+            bbs.append(bbox)
+            confs.append(score)
+            cls.append(class_id)
+            
+    indices = cv2.dnn.NMSBoxes(bbs, confs, confidence, offset)  # TODO Добавить для устранения оверлапов
+    for i in indices:
+        result.append((bboxes[i], class_ids[i], scores[i]))
     return result
 
 def render(metadata, frame):
@@ -87,7 +95,7 @@ def render(metadata, frame):
         bbox, class_id, score = item
         (x, y, w, h) = bbox
         cv2.putText(frame, str(classes[class_id]), (x, y - 10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (200, 0, 50), 2)
-        cv2.putText(frame, str(score), (x, y + 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 200), 2)
+        cv2.putText(frame, str(score)[:3], (x, y + 30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, (0, 0, 200), 2)
         cv2.line(frame, (x, y + h), (x + w, y + h), (200, 0, 0), 10)
     return frame
 
@@ -116,15 +124,19 @@ def main():
         if cycles > 50 and cv2.getWindowProperty('Output',cv2.WND_PROP_VISIBLE) < 1:
             break # TODO проверять открыто ли окно и взводить влаг вместо cycles
         
-        result = inference(frame, 0.5, ['0'])
+        alpha = 0.7
+        conf = 0.25
+        offset = 0.25
+        
+        result = inference(frame, conf, offset, ['0'])
         
         if ssd_out(result, data['polygons']):
-            cv2.putText(output, 'WARNING', (100, 175), cv2.FONT_HERSHEY_COMPLEX_SMALL, 5, (255, 255, 255), 2)
+            cv2.putText(frame, 'АХТУНГ!', (100, 170), cv2.FONT_HERSHEY_COMPLEX, 7, (255, 255, 255), 2)
             zone_color = RED
         else:
             zone_color = GREEN
         
-        alpha = 0.7
+        
         frame = render(result, frame)
         output = frame.copy()
         shapes = draw_polygons(data['polygons'], frame, zone_color)
